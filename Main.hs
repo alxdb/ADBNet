@@ -19,8 +19,6 @@ type Network = Vector (Matrix Double)
 
 type Activations = Vector (Vector Double, Vector Double)
 
-type Deltas = Vector (Vector Double)
-
 randNet :: (StatefulGen g m) => [Int] -> g -> m Network
 randNet dims g = V.fromList <$> mapM (`randMat` g) (zipWith (\i o -> (o, i)) dims (tail dims))
 
@@ -39,32 +37,40 @@ rss' x y = 2 * (x - y)
 memoize :: Int -> (Int -> a) -> (Int -> a)
 memoize l f = (V.generate l f V.!)
 
-activation :: Network -> Vector Double -> Int -> (Vector Double, Vector Double)
-activation net input = fix (memoize (length net) . f)
-  where
-    f _ 0 = trace "activate 0" $ let z = V.head net !* input in (V.map sigmoid z, z)
-    f f' n = trace ("activate " ++ show n) $ let z = net V.! n !* fst (f' (n - 1)) in (V.map sigmoid z, z)
-
 activations :: Network -> Vector Double -> Activations
 activations net input = V.generate (length net) (activation net input)
-
-delta :: Network -> Vector Double -> Vector Double -> Int -> Vector Double
-delta net input output = fix (memoize (length net) . f)
   where
-    f f' n
-      | n == length net - 1 = trace ("delta " ++ show n) $ V.zipWith (*) z' (V.zipWith rss' a output)
-      | otherwise = trace ("delta " ++ show n) $ V.zipWith (*) z' (c !* f' (n + 1))
+    activation net input = fix (memoize (length net) . f)
       where
-        (a, z) = as V.! n
-        c = net V.! n
-        z' = V.map sigmoid' z
-    as = activations net input
+        f _ 0 = trace "activate 0" $ let z = V.head net !* input in (V.map sigmoid z, z)
+        f f' n = trace ("activate " ++ show n) $ let z = net V.! n !* fst (f' (n - 1)) in (V.map sigmoid z, z)
 
-deltas :: Network -> Vector Double -> Vector Double -> Deltas
-deltas net input output = V.generate (length net) (delta net input output)
+deltas :: Network -> Vector Double -> Vector Double -> Activations -> Vector (Vector Double)
+deltas net input output as = V.generate (length net) (delta net input output as)
+  where
+    delta net input output as = fix (memoize (length net) . f)
+      where
+        f f' n
+          | n == length net - 1 = trace ("delta " ++ show n) $ V.zipWith (*) z' (V.zipWith rss' a output)
+          | otherwise = trace ("delta " ++ show n) $ V.zipWith (*) z' (c !* f' (n + 1))
+          where
+            (a, z) = as V.! n
+            c = net V.! n
+            z' = V.map sigmoid' z
+
+gradients :: Network -> Vector Double -> Vector Double -> Activations -> Vector (Vector Double) -> Vector (Matrix Double)
+gradients net input output as ds = V.generate (length net) (gradient net input output as ds)
+  where
+    gradient net input output as ds = fix (memoize (length net) . f)
+      where
+        f f' 0 = trace "gradient 0" $ outer input (V.head ds)
+        f f' n = trace ("gradient " ++ show n) $ outer (fst $ as V.! (n - 1)) (ds V.! n)
 
 main :: IO ()
 main = do
   gen <- newIOGenM $ mkStdGen 10
   net <- randNet [2, 4, 4, 1] gen
-  print $ deltas net [0, 0] [0]
+  let input = [0, 0]
+  let output = [0]
+  let as = activations net input
+  print $ gradients net input output as (deltas net input output as)
