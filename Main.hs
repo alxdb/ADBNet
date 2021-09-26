@@ -17,8 +17,6 @@ randMat (rows, cols) g = V.replicateM rows . V.replicateM cols $ uniformRM (0.0,
 
 type Network = Vector (Matrix Double)
 
-type Activations = Vector (Vector Double, Vector Double)
-
 randNet :: (StatefulGen g m) => [Int] -> g -> m Network
 randNet dims g = V.fromList <$> mapM (`randMat` g) (zipWith (\i o -> (o, i)) dims (tail dims))
 
@@ -36,6 +34,8 @@ rss' x y = 2 * (x - y)
 
 memoize :: Int -> (Int -> a) -> (Int -> a)
 memoize l f = (V.generate l f V.!)
+
+type Activations = Vector (Vector Double, Vector Double)
 
 activations :: Network -> Vector Double -> Activations
 activations net input = V.generate (length net) (activation net input)
@@ -72,5 +72,4 @@ main = do
   net <- randNet [2, 4, 4, 1] gen
   let input = [0, 0]
   let output = [0]
-  let as = activations net input
-  print $ gradients net input output as (deltas net input output as)
+  let as = activations net input in print $ gradients net input output as (deltas net input output as)
