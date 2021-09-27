@@ -56,7 +56,7 @@ deltas net input output as = V.generate (length net) (delta net input output as)
           | otherwise = trace ("delta " ++ show n) $ z' * (tr w #> f' (n + 1))
           where
             (a, z) = as V.! n
-            w = net V.! n ¿ [0 .. size a - 2]
+            w = (net V.! (n + 1)) ¿ [0 .. size a - 1]
             z' = sigmoid' z
 
 gradients :: Network -> Vector R -> Vector R -> Activations -> V.Vector (Vector R) -> V.Vector (Matrix R)
@@ -71,6 +71,10 @@ gradients net input output as ds = V.generate (length net) (gradient net input o
 main = do
   gen <- newIOGenM $ mkStdGen 10
   net <- randNet [2, 4, 4, 1] gen
-  let input = [0, 0]
+  let input = [1, 1]
   let output = [0]
-  let as = activations net input in print $ gradients net input output as (deltas net input output as)
+  let as = activations net input
+  let ds = deltas net input output as
+  let gs = gradients net input output as ds
+  print . length . show $ gs
+  print gs
