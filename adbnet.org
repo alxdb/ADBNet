@@ -1,8 +1,0 @@
-#+TITLE: Adbnet
-
-#+begin_src haskell
-runStateGen_ (mkStdGen 42) (randMat (1000, 1000)) `seq` "done"
-#+end_src
-
-#+RESULTS:
-: done
