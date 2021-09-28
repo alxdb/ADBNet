@@ -1,0 +1,96 @@
+#+title: ADBNet
+#+subtitle: Neural Network Implementation
+
+* Background
+#+latex_header: \usepackage{amsmath}
+#+latex_header: \newcommand{\pd}[2]{\frac{\partial #1}{\partial #2}}
+
+An Artificial Neural Network can be described mathematically as:
+
+\begin{align}
+a_j^n &= \sigma(z_j^n) \\
+z_j^n &= \sum_k w_{jk}^n a_k^{n-1} + b_j^n
+\end{align}
+
+Where $a_j^n$ is the activation of neuron $j$ in network layer $n$. The
+connections between neurons are described by two parameters: $w_{jk}^n$ is the
+weight of the connection between neuron $k$ in layer $n - 1$ and neuron $j$ in
+layer $n$; $b_j^n$ is the bias added to neuron $j$ in layer $n$ when determining
+its activation. The input to the network is defined as $a_j^{-1}$ and the output
+is $a_j^N$ where N is the number of hidden layers in the network. $\sigma$ is
+the activation function, normally defined as the sigmoid function, but can be
+any differentiable function.
+
+In order to "train" the network, we must adjust the weights and biases such that
+a given loss function is minimized. The central technique used to do this, is
+back-propagation. Given some loss function $L$, we wish to find the gradient of
+this function with respect to the weights and biases of the network, and use
+
+set of training data.
+
+The required formula are as follows:
+
+\begin{align}
+\delta_j^n &= \sigma'(z_j^n) \sum_k w_{kj}^{n+1} \delta_k^{n+1} \\
+\delta_j^N &= \sigma'(z_j^N) \cdot L'(a_j^N, y) \\
+\pd{L}{w_{jk}^n} &= a_k^{n-1} \delta_j^n \\
+\pd{L}{b_j^n} &= \delta_j^n
+\end{align}
+
+Where $L'$ is the derivative of the loss function.
+
+* Examples
+#+property: header-args:jupyter-python :session *adbnet*
+
+#+begin_src jupyter-python :results silent :kernel python3
+%load_ext autoreload
+%autoreload 2
+import neural_network as nn
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+import itertools as itt
+
+plt.style.use('../pyscratch/onedark.mplstyle')
+#+end_src
+
+#+begin_src jupyter-python
+haskell_activations = [
+    [([0.6224593312018546, 0.6224593312018546, 0.6224593312018546, 0.6224593312018546,], [0.5, 0.5, 0.5, 0.5],), ([0.8513107499357798], [1.7449186624037092]),], [([0.7310585786300049, 0.7310585786300049, 0.7310585786300049, 0.7310585786300049,], [1.0, 1.0, 1.0, 1.0],), ([0.8767618948151749], [1.9621171572600098]),], [([0.7310585786300049, 0.7310585786300049, 0.7310585786300049, 0.7310585786300049,], [1.0, 1.0, 1.0, 1.0],), ([0.8767618948151749], [1.9621171572600098]),], [([0.8175744761936437, 0.8175744761936437, 0.8175744761936437, 0.8175744761936437,], [1.5, 1.5, 1.5, 1.5],), ([0.8942728255462914], [2.1351489523872873]),],
+]
+haskell_deltas = [
+    [[2.5323896425858663e-2,2.5323896425858663e-2,2.5323896425858663e-2,2.5323896425858663e-2],[0.2155191183034158]],
+    [[-2.618071871888454e-3,-2.618071871888454e-3,-2.618071871888454e-3,-2.618071871888454e-3],[-2.663187151181609e-2]],
+    [[-2.618071871888454e-3,-2.618071871888454e-3,-2.618071871888454e-3,-2.618071871888454e-3],[-2.663187151181609e-2]],
+    [[1.2610712378261018e-2,1.2610712378261018e-2,1.2610712378261018e-2,1.2610712378261018e-2],[0.16910509372779708]]
+]
+for example in haskell_activations:
+    hask_as.append(example)
+#+end_src
+
+
+#+begin_src jupyter-python
+net = nn.NeuralNetwork(42, [2, 4, 1], 1.0)
+data = [
+    (np.array([0, 0]), np.array([0])),
+    (np.array([0, 1]), np.array([1])),
+    (np.array([1, 0]), np.array([1])),
+    (np.array([1, 1]), np.array([0])),
+]
+# net.cs = [np.full((r, c), (r + c) / 7) for r, c in map(np.shape, net.cs)]
+net.train(itt.islice(itt.cycle(data), 4000))
+net.test(data)
+plt.plot(net.loss)
+# for n, (i, o) in enumerate(data):
+#     net.fit_one(i, o)
+#     print(net.cs)
+print([net.run(i) for i, _ in data])
+del net
+#+end_src
+
+#+RESULTS:
+:RESULTS:
+: [array([0.02527624]), array([0.95987662]), array([0.97508625]), array([0.0457381])]
+[[file:./.ob-jupyter/780d7f8ce864d1820e5b1404ab5144d0205b2bf6.png]]
+:END:
