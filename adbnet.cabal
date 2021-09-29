@@ -7,6 +7,17 @@ author:              Alexander Davidson Bryan
 maintainer:          alxdb@pm.me
 extra-source-files:  CHANGELOG.md
 
+library
+  build-depends:
+    base ^>=4.14.2.0,
+    array ^>=0.5.4.0,
+    random ^>=1.2.1
+  hs-source-dirs:
+    src
+  default-language: Haskell2010
+  exposed-modules:
+    ADBNet, ADBNet.Maths
+
 executable adbnet
   main-is:             Main.hs
   build-depends:
