@@ -4,7 +4,7 @@ module ADBNet.Network
 import           ADBNet.Maths
 import           Data.Array
 
-type Coefficients = Array Int Matrix
+-- type Coefficients = Array Int Matrix
 
-propagate :: Coefficients -> Vector -> Array Int Vector
-propagate = undefined
+-- propagate :: Coefficients -> Vector -> Array Int Vector
+-- propagate = undefined

@@ -16,7 +16,7 @@ library
     src
   default-language: Haskell2010
   exposed-modules:
-    ADBNet, ADBNet.Maths
+    ADBNet, ADBNet.Tensor
 
 executable adbnet
   main-is:             Main.hs
