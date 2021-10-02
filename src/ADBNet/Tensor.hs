@@ -1,76 +1,142 @@
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module ADBNet.Tensor
   () where
 
 import           Control.Applicative
 import           Control.Monad
-import qualified Data.Array.Unboxed            as U
+import           Data.Array.Base
+import           Data.Array.Unboxed
 import           Data.Ix
 import           System.Random.Stateful
+import           Text.Printf
 
-type R = Double
+newtype Tensor i e = Tensor { arr :: UArray i e }
 
-newtype Tensor a = Tensor { arr :: U.UArray a R }
+type Matrix e = Tensor (Int, Int) e
+type Vector e = Tensor Int e
+type Scalar e = Tensor () e
 
-type Matrix = Tensor (Int, Int)
-type Vector = Tensor Int
-type Scalar = Tensor ()
-
-instance Show Matrix where
-  show = show . rows
-
-instance Show Vector where
-  show = show . U.elems . arr
-
-instance Show Scalar where
-  show = show . (! ())
-
-class Ix a => Tix a where
-  start :: a
-  tRange :: a -> (a, a)
-  tRange s = (start, s)
-
-instance Tix (Int, Int) where
-  start = (1, 1)
-
-instance Tix Int where
-  start = 1
+class (Show i, Ix i) => Tix i where
+  ixs :: i -> (i, i)
 
 instance Tix () where
-  start = ()
+  ixs _ = ((), ())
 
-tMap :: (Ix a) => (R -> R) -> Tensor a -> Tensor a
-tMap f = Tensor . U.amap f . arr
+instance Tix Int where
+  ixs d = (1, d)
 
-tZip :: (Ix a) => (R -> R -> R) -> Tensor a -> Tensor a -> Tensor a
-tZip f a b | tDim a == tDim b = undefined
-           | otherwise        = error "Tensor dimensions do not match"
+instance Tix (Int, Int) where
+  ixs d = ((1, 1), d)
 
-tDim :: (Ix a) => Tensor a -> a
-tDim = snd . U.bounds . arr
+instance (IArray UArray e) => IArray Tensor e where
+  bounds           = bounds . arr
+  numElements      = numElements . arr
+  unsafeArray      = \a b -> Tensor $ unsafeArray a b
+  unsafeAt         = unsafeAt . arr
+  unsafeReplace    = \a b -> Tensor $ unsafeReplace (arr a) b
+  unsafeAccum      = \a b c -> Tensor $ unsafeAccum a (arr b) c
+  unsafeAccumArray = \a b c d -> Tensor $ unsafeAccumArray a b c d
 
-tNew :: (Tix a) => a -> [R] -> Tensor a
-tNew s v = Tensor $ U.listArray (tRange s) v
+instance (Ix i, IArray UArray e, Eq e) => Eq (Tensor i e) where
+  a /= b = arr a /= arr b
+  a == b = arr a == arr b
 
-tRndM :: (Tix a, StatefulGen g m) => a -> g -> m (Tensor a)
-tRndM s g =
-  tNew s <$> replicateM (rangeSize . tRange $ s) (uniformRM (0.0, 1.0) g)
+instance (Ix i, IArray UArray e, Ord e) => Ord (Tensor i e) where
+  compare a b = compare (arr a) (arr b)
 
-tRnd :: (Tix a, RandomGen g) => a -> g -> (Tensor a, g)
-tRnd s g = runStateGen g (tRndM s)
+instance (Tix i, Show i, IArray UArray e, Num e) => Num (Tensor i e) where
+  (+)         = tzip (+)
+  (*)         = tzip (*)
+  abs         = tmap abs
+  signum      = tmap signum
+  negate      = tmap negate
+  fromInteger = error "Sorry! Can't use fromInteger with Tensors"
 
-(!) :: (Ix a) => Tensor a -> a -> R
-(!) = (U.!) . arr
+instance (Tix i, IArray UArray e, Fractional e) => Fractional (Tensor i e) where
+  (/)          = tzip (/)
+  recip        = tmap recip
+  fromRational = error "Sorry! Can't use fromRational with Tensors"
 
-row :: Matrix -> Int -> Vector
-row m r = tNew c $ map (\i -> m ! (r, i)) [1 .. c] where c = snd . tDim $ m
+instance (Tix i, IArray UArray e, Floating e) => Floating (Tensor i e) where
+  pi    = error "Sorry! Can't use pi with Tensors"
+  exp   = tmap exp
+  log   = tmap log
+  sin   = tmap sin
+  cos   = tmap cos
+  asin  = tmap asin
+  acos  = tmap acos
+  atan  = tmap atan
+  sinh  = tmap sinh
+  cosh  = tmap cosh
+  asinh = tmap asinh
+  acosh = tmap acosh
+  atanh = tmap atanh
 
-rows :: Matrix -> [Vector]
-rows m = map (row m) [1 .. (fst . tDim $ m)]
+dims :: (Tix i, IArray UArray e) => Tensor i e -> i
+dims = snd . bounds
 
-col :: Matrix -> Int -> Vector
-col m c = tNew r $ map (\i -> m ! (i, c)) [1 .. r] where r = fst . tDim $ m
+tmap :: (Tix i, IArray UArray e) => (e -> e) -> Tensor i e -> Tensor i e
+tmap f = Tensor . amap f . arr
 
-cols :: Matrix -> [Vector]
-cols m = map (col m) [1 .. (snd . tDim $ m)]
+tzip
+  :: (Tix i, IArray UArray e)
+  => (e -> e -> e)
+  -> Tensor i e
+  -> Tensor i e
+  -> Tensor i e
+tzip f a b
+  | dims a == dims b
+  = listArray (bounds a) $ zipWith f (elems a) (elems b)
+  | otherwise
+  = error
+    $  "Tensor dimensions do not match: "
+    ++ show (dims a)
+    ++ " != "
+    ++ show (dims b)
+
+tnew :: (Tix i, IArray UArray e) => i -> [e] -> Tensor i e
+tnew d v = Tensor $ listArray (ixs d) v
+
+trndM
+  :: (Tix i, IArray UArray e, UniformRange e, StatefulGen g m)
+  => i
+  -> (e, e)
+  -> g
+  -> m (Tensor i e)
+trndM s r g = tnew s <$> replicateM (rangeSize . ixs $ s) (uniformRM r g)
+
+trnd
+  :: (Tix i, IArray UArray e, UniformRange e, RandomGen g)
+  => i
+  -> (e, e)
+  -> g
+  -> (Tensor i e, g)
+trnd s r g = runStateGen g (trndM s r)
+
+instance (Show e, IArray UArray e) => Show (Matrix e) where
+  show = show . rows
+
+instance (Show e, IArray UArray e) => Show (Vector e) where
+  show = show . elems
+
+instance (Show e, IArray UArray e) => Show (Scalar e) where
+  show = show . (! ())
+
+row :: (IArray UArray e) => Matrix e -> Int -> Vector e
+row m r = tnew c $ map (\i -> m ! (r, i)) [1 .. c] where c = snd . dims $ m
+
+rows :: (IArray UArray e) => Matrix e -> [Vector e]
+rows m = map (row m) [1 .. (fst . dims $ m)]
+
+col :: (IArray UArray e) => Matrix e -> Int -> Vector e
+col m c = tnew r $ map (\i -> m ! (i, c)) [1 .. r] where r = fst . dims $ m
+
+cols :: (IArray UArray e) => Matrix e -> [Vector e]
+cols m = map (col m) [1 .. (snd . dims $ m)]
+
+matmul :: (IArray UArray e, Num e, Enum e) => Matrix e -> Vector e -> Vector e
+matmul m v = foldl (+) (tnew (dims v) [0 ..]) (map (* v) $ rows m)
