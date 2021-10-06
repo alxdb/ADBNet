@@ -30,6 +30,7 @@ module ADBNet.Tensor
   , fromCols
   , matmul
   , outerp
+  , transp
   ) where
 
 import           Control.Applicative
@@ -165,6 +166,15 @@ mnew = tnew
 vnew :: (El e) => Int -> [e] -> Vector e
 vnew = tnew
 
+foldv :: (El e) => (a -> e -> a) -> a -> Vector e -> a
+foldv f a = foldl f a . elems
+
+sumv :: (El e, Num e) => Vector e -> e
+sumv = foldv (+) 0
+
+dotv :: (El e, Num e) => Vector e -> Vector e -> e
+dotv u = sumv . (* u)
+
 row :: (El e) => Matrix e -> Int -> Vector e
 row m r = tnew c $ map (\i -> m ! (r, i)) [1 .. c] where c = snd . dims $ m
 
@@ -181,10 +191,16 @@ cols :: (El e) => Matrix e -> [Vector e]
 cols m = map (col m) [1 .. (snd . dims $ m)]
 
 fromCols :: (El e) => [Vector e] -> Matrix e
-fromCols cs = tnew (dims . head $ cs, length cs) $ concatMap elems cs
+fromCols = transp . fromRows
+
+addCol :: (El e) => Matrix e -> Vector e -> Matrix e
+addCol m c = fromCols $ cols m ++ [c]
 
 matmul :: (El e, Num e, Enum e) => Matrix e -> Vector e -> Vector e
-matmul m v = foldl (+) (tval (dims v) 0) (map (* v) $ rows m)
+matmul m v = vnew (dims v) $ map (dotv v) (rows m)
 
 outerp :: (El e, Num e) => Vector e -> Vector e -> Matrix e
 outerp u v = fromRows . map (`scale` v) $ elems u
+
+transp :: (El e) => Matrix e -> Matrix e
+transp = fromRows . cols
