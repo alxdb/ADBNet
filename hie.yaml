@@ -3,5 +3,8 @@ cradle:
     - path: "src"
       component: "lib:adbnet"
 
+    - path: "test"
+      component: "adbnet:test:spec"
+
     - path: "./Main.hs"
       component: "adbnet:exe:adbnet"
