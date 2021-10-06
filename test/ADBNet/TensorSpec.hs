@@ -12,7 +12,7 @@ matmulTest = matmul m v `shouldBe` e  where
     m :: Matrix Int
     m = tnew (7, 5) [0 ..]
     v = tnew 5 [0 ..]
-    e = tnew 5 [ sum $ zipWith (*) [i .. i + 4] [0 .. 4] | i <- [0, 5 ..] ]
+    e = tnew 7 [ sum $ zipWith (*) [i .. i + 4] [0 .. 4] | i <- [0, 5 ..] ]
 
 outerpTest = outerp u v `shouldBe` e  where
     u :: Vector Int

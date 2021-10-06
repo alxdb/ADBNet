@@ -206,7 +206,7 @@ remCol :: (El e) => Matrix e -> Matrix e
 remCol m = fromCols . init $ cols m
 
 matmul :: (El e, Num e, Enum e) => Matrix e -> Vector e -> Vector e
-matmul m v = vnew (dims v) $ map (dotv v) (rows m)
+matmul m v = vnew (fst $ dims m) $ map (dotv v) (rows m)
 
 outerp :: (El e, Num e) => Vector e -> Vector e -> Matrix e
 outerp u v = fromRows . map (`scale` v) $ elems u
