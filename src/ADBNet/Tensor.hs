@@ -29,6 +29,7 @@ module ADBNet.Tensor
   , cols
   , fromCols
   , addCol
+  , remCol
   , matmul
   , outerp
   , transp
@@ -196,6 +197,9 @@ fromCols = transp . fromRows
 
 addCol :: (El e) => Matrix e -> Vector e -> Matrix e
 addCol m c = fromCols $ cols m ++ [c]
+
+remCol :: (El e) => Matrix e -> Matrix e
+remCol m = fromCols . init $ cols m
 
 matmul :: (El e, Num e, Enum e) => Matrix e -> Vector e -> Vector e
 matmul m v = vnew (dims v) $ map (dotv v) (rows m)

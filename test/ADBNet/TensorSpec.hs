@@ -48,6 +48,12 @@ addColTest = addCol m c `shouldBe` e
         [ if mod i 8 == 7 then rem i 7 + (5 * 7) else i - div i 8
         | i <- [0 ..]
         ]
+        
+remColTest = remCol m `shouldBe` e
+  where
+    m :: Matrix Int
+    m = tnew (5, 7) [0 ..]
+    e = tnew (5, 6) [ i + div i 6 | i <- [0 ..]]
 
 spec = do
     describe "matmul" $ do
@@ -62,3 +68,5 @@ spec = do
         it "acts as expected" fromColsTest
     describe "addCol" $ do
         it "acts as expected" addColTest
+    describe "remCol" $ do
+        it "acts as expected" remColTest
