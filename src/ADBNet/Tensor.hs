@@ -22,6 +22,7 @@ module ADBNet.Tensor
   , scale
   , mnew
   , vnew
+  , vapp
   , row
   , rows
   , fromRows
@@ -176,6 +177,9 @@ sumv = foldv (+) 0
 
 dotv :: (El e, Num e) => Vector e -> Vector e -> e
 dotv u = sumv . (* u)
+
+vapp :: (El e, Num e) => Vector e -> e -> Vector e
+vapp v x = tnew (dims v + 1) $ elems v ++ [x]
 
 row :: (El e) => Matrix e -> Int -> Vector e
 row m r = tnew c $ map (\i -> m ! (r, i)) [1 .. c] where c = snd . dims $ m
