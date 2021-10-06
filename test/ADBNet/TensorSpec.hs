@@ -41,6 +41,12 @@ fromRowsTest = m `shouldBe` e
     m = fromRows [ vnew 5 [i ..] | i <- [0 .. 6] ]
     e = mnew (7, 5) [ i + j | i <- [0 .. 6], j <- [0 .. 4] ]
 
+fromColsTest = m `shouldBe` e
+  where
+    m :: Matrix Int
+    m = fromCols [ vnew 5 [i ..] | i <- [0 .. 6] ]
+    e = mnew (5, 7) [ i + j | i <- [0 .. 4], j <- [0 .. 6] ]
+
 spec = do
     describe "matmul" $ do
         it "acts as expected" matmulTest

@@ -27,6 +27,7 @@ module ADBNet.Tensor
   , fromRows
   , col
   , cols
+  , fromCols
   , matmul
   , outerp
   ) where
@@ -178,6 +179,9 @@ col m c = tnew r $ map (\i -> m ! (i, c)) [1 .. r] where r = fst . dims $ m
 
 cols :: (El e) => Matrix e -> [Vector e]
 cols m = map (col m) [1 .. (snd . dims $ m)]
+
+fromCols :: (El e) => [Vector e] -> Matrix e
+fromCols cs = tnew (dims . head $ cs, length cs) $ concatMap elems cs
 
 matmul :: (El e, Num e, Enum e) => Matrix e -> Vector e -> Vector e
 matmul m v = foldl (+) (tval (dims v) 0) (map (* v) $ rows m)
