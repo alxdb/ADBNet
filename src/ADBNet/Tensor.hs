@@ -28,6 +28,7 @@ module ADBNet.Tensor
   , col
   , cols
   , fromCols
+  , addCol
   , matmul
   , outerp
   , transp

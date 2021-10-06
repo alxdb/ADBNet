@@ -13,9 +13,9 @@ import           Test.QuickCheck
 
 matmulTest = matmul m v `shouldBe` e  where
     m :: Matrix Int
-    m = mnew (7, 5) [0 ..]
-    v = vnew 5 [0 ..]
-    e = vnew 5 [ sum $ zipWith (*) [i .. i + 4] [0 .. 4] | i <- [0, 5 ..] ]
+    m = tnew (7, 5) [0 ..]
+    v = tnew 5 [0 ..]
+    e = tnew 5 [ sum $ zipWith (*) [i .. i + 4] [0 .. 4] | i <- [0, 5 ..] ]
 
 outerpTest = outerp u v `shouldBe` e  where
     u :: Vector Int
@@ -26,20 +26,31 @@ outerpTest = outerp u v `shouldBe` e  where
 transpTest = transp m `shouldBe` e
   where
     m :: Matrix Int
-    m = mnew (7, 5) [ i * j | i <- [0, 2 ..], j <- [0 .. 4] ]
-    e = mnew (5, 7) [ i * j | i <- [0 ..], j <- [0, 2 .. 12] ]
+    m = tnew (7, 5) [ i * j | i <- [0, 2 ..], j <- [0 .. 4] ]
+    e = tnew (5, 7) [ i * j | i <- [0 ..], j <- [0, 2 .. 12] ]
 
-fromRowsTest = m `shouldBe` e
+fromRowsTest = fromRows rs `shouldBe` e
+  where
+    rs :: [Vector Int]
+    rs = [ tnew 5 [i ..] | i <- [0, 5 .. 6 * 5] ]
+    e  = tnew (7, 5) [0 ..]
+
+fromColsTest = fromCols cs `shouldBe` e
+  where
+    cs :: [Vector Int]
+    cs = [ tnew 5 [i ..] | i <- [0, 5 .. 6 * 5] ]
+    e  = tnew (5, 7) [ i + j | i <- [0 ..], j <- [0, 5 .. 6 * 5] ]
+
+addColTest = addCol m c `shouldBe` e
   where
     m :: Matrix Int
-    m = fromRows [ vnew 5 [i ..] | i <- [0, 5 .. 6 * 5] ]
-    e = mnew (7, 5) [0 ..]
-
-fromColsTest = m `shouldBe` e
-  where
-    m :: Matrix Int
-    m = fromCols [ vnew 5 [i ..] | i <- [0, 5 .. 6 * 5] ]
-    e = mnew (5, 7) [ i + j | i <- [0 ..], j <- [0, 5 .. 6 * 5] ]
+    m = tnew (5, 7) [0 ..]
+    c = tnew 5 [(5 * 7) ..]
+    e = tnew
+        (5, 8)
+        [ if mod i 8 == 7 then rem i 7 + (5 * 7) else i - div i 8
+        | i <- [0 ..]
+        ]
 
 spec = do
     describe "matmul" $ do
@@ -52,3 +63,5 @@ spec = do
         it "acts as expected" fromRowsTest
     describe "fromCols" $ do
         it "acts as expected" fromColsTest
+    describe "addCol" $ do
+        it "acts as expected" addColTest
