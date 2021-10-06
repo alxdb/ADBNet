@@ -6,10 +6,7 @@ module ADBNet.TensorSpec
     ) where
 
 import           ADBNet.Tensor
-import           Data.Array.Base
 import           Test.Hspec
-import           Test.Hspec.QuickCheck
-import           Test.QuickCheck
 
 matmulTest = matmul m v `shouldBe` e  where
     m :: Matrix Int
