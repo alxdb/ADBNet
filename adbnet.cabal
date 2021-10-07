@@ -6,32 +6,37 @@ author:             Alexander Davidson Bryan
 maintainer:         alxdb@pm.me
 extra-source-files: CHANGELOG.md
 
-library
-  hs-source-dirs:   src
-  exposed-modules:
-    ADBNet
-    ADBNet.Tensor
-
+common adbnet
+  default-language: Haskell2010
   build-depends:
     , array   ^>=0.5.4.0
     , base    ^>=4.14.2.0
     , random  ^>=1.2.1
 
-  default-language: Haskell2010
+library
+  import: adbnet
+  hs-source-dirs:   src
+  exposed-modules:
+    ADBNet
+    ADBNet.Tensor
+    ADBNet.Misc
+    ADBNet.Network
 
 test-suite spec
+  import: adbnet
   type:               exitcode-stdio-1.0
   main-is:            Spec.hs
   hs-source-dirs:     test
   build-depends:
     , adbnet
-    , array
-    , base        ^>=4.14.2.0
     , hspec       ^>=2.8.3
     , QuickCheck
 
+  other-modules:
+    ADBNet.NetworkSpec
+    ADBNet.TensorSpec
+
   build-tool-depends: hspec-discover:hspec-discover ^>=2.8.3
-  default-language:   Haskell2010
 
 executable adbnet
   main-is:          Main.hs
