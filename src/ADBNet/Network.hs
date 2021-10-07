@@ -36,7 +36,8 @@ randomNetwork_ d g = runStateGen_ (mkStdGen g) (randomNetworkM d)
 -- Central Functions
 
 activations :: NeuralNetwork -> V -> (A V, A V)
-activations nn i = (as, zs)  where
+activations nn i = (as, zs)
+  where
     s  = snd $ bounds nn
     as = listArray (1, s) [ tmap sigmoid $ z i | i <- [1 .. s] ]
     zs = listArray (1, s) [ z i | i <- [1 .. s] ]
@@ -46,14 +47,16 @@ activations nn i = (as, zs)  where
           | otherwise = as ! (n - 1)
 
 deltas :: NeuralNetwork -> (A V, A V) -> V -> A V
-deltas nn (as, zs) o = ds  where
+deltas nn (as, zs) o = ds
+  where
     s  = snd $ bounds nn
     ds = listArray (1, s) [ tmap sigmoid' (zs ! i) * d i | i <- [1, s] ]
     d n | n == s    = tzip rss' (as ! s) o
         | otherwise = transp (remCol (nn ! (n + 1))) `matmul` (ds ! (n + 1))
 
 gradients :: NeuralNetwork -> V -> (A V, A V) -> A V -> A M
-gradients nn i (as, zs) ds = gs  where
+gradients nn i (as, zs) ds = gs
+  where
     s  = snd $ bounds nn
     gs = listArray (1, s) [ g i | i <- [1 .. s] ]
     g n = (ds ! n) `outerp` vapp l 1.0
