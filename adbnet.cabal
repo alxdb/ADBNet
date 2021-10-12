@@ -14,16 +14,17 @@ common adbnet
     , random  ^>=1.2.1
 
 library
-  import: adbnet
-  hs-source-dirs:   src
+  import:          adbnet
+  hs-source-dirs:  src
   exposed-modules:
     ADBNet
-    ADBNet.Tensor
+    ADBNet.Array
     ADBNet.Misc
     ADBNet.Network
+    ADBNet.Tensor
 
 test-suite spec
-  import: adbnet
+  import:             adbnet
   type:               exitcode-stdio-1.0
   main-is:            Spec.hs
   hs-source-dirs:     test
@@ -33,6 +34,7 @@ test-suite spec
     , QuickCheck
 
   other-modules:
+    ADBNet.ArraySpec
     ADBNet.NetworkSpec
     ADBNet.TensorSpec
 
@@ -41,7 +43,6 @@ test-suite spec
 executable adbnet
   main-is:          Main.hs
   build-depends:
-    , adbnet
     , base     ^>=4.14.2.0
     , hmatrix  ^>=0.20.2
     , random   ^>=1.2.1

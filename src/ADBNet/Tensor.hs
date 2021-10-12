@@ -20,8 +20,8 @@ module ADBNet.Tensor
   , trnd
   , trnd_
   , scale
-  , mnew
-  , vnew
+  , sumv
+  , dotv
   , vapp
   , row
   , rows
@@ -163,12 +163,6 @@ trnd_ s r g = runStateGen_ (mkStdGen g) (trndM s r)
 scale :: (Tix i, El e, Num e) => e -> Tensor i e -> Tensor i e
 scale x = tmap (* x)
 
-mnew :: (El e) => (Int, Int) -> [e] -> Matrix e
-mnew = tnew
-
-vnew :: (El e) => Int -> [e] -> Vector e
-vnew = tnew
-
 foldv :: (El e) => (a -> e -> a) -> a -> Vector e -> a
 foldv f a = foldl f a . elems
 
@@ -206,7 +200,7 @@ remCol :: (El e) => Matrix e -> Matrix e
 remCol m = fromCols . init $ cols m
 
 matmul :: (El e, Num e, Enum e) => Matrix e -> Vector e -> Vector e
-matmul m v = vnew (fst $ dims m) $ map (dotv v) (rows m)
+matmul m v = tnew (fst $ dims m) $ map (dotv v) (rows m)
 
 outerp :: (El e, Num e) => Vector e -> Vector e -> Matrix e
 outerp u v = fromRows . map (`scale` v) $ elems u

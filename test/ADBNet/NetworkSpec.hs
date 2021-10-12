@@ -43,6 +43,20 @@ gradientsTest = a `shouldBe` e
     g2       = (ds ! 2) `outerp` vapp (as ! 1) 1.0
     e        = listArray (1, 2) [g1, g2]
 
+trainTest = map abs (zipWith (-) a e) `shouldSatisfy` all (< 0.1)
+  where
+    nn' = randomNetwork_ [2, 4, 1] 0
+    td =
+        [ (tnew 2 [0.0, 0.0], tnew 1 [0.0])
+        , (tnew 2 [1.0, 0.0], tnew 1 [1.0])
+        , (tnew 2 [0.0, 1.0], tnew 1 [1.0])
+        , (tnew 2 [1.0, 1.0], tnew 1 [0.0])
+        ]
+    tp = TrainingParameters { learningRate = 0.2, trainingIterations = 1600 }
+    (nn, _) = train tp nn' td
+    a       = map (run nn . fst) td
+    e       = map snd td
+
 spec = do
     describe "activations" $ do
         it "acts as expected" activationsTest
@@ -50,3 +64,5 @@ spec = do
         it "acts as expected" deltasTest
     describe "gradients" $ do
         it "acts as expected" gradientsTest
+    describe "train" $ do
+        it "can emulate xor" trainTest
