@@ -10,6 +10,8 @@ module ADBNet.Network
   , activations
   , deltas
   , gradients
+  , loss
+  , singleFit
   , train
   , run
   ) where
@@ -89,13 +91,13 @@ loss :: V -> V -> Double
 loss x y = let d = (x - y) in dotv d d
 
 singleFit :: Double -> NeuralNetwork -> (V, V) -> (NeuralNetwork, Double, V)
-singleFit lr nn (i, o) = traceShow (nn', loss o' o, o') (nn', loss o' o, o')
+singleFit lr nn (i, o) = (nn', loss o' o, o')
  where
   o'  = alast $ fst az
-  az  = traceShow az $ activations nn i
-  ds  = trace "del" $ deltas nn az o
-  gs  = trace "gra" $ gradients nn o az ds
-  nn' = trace "app" $ azip (-) nn $ amap (scale lr) gs
+  az  = activations nn i
+  ds  = deltas nn az o
+  gs  = gradients nn i az ds
+  nn' = azip (-) nn $ amap (scale lr) gs
 
 train
   :: TrainingParameters
@@ -110,8 +112,8 @@ train tp nn td = runST $ do
   lr = learningRate tp
   ti = trainingIterations tp
   f :: STRef s (NeuralNetwork, TrainingMeta) -> (Int, (V, V)) -> ST s ()
-  f ref (n, trainingExample) = traceShow n $ modifySTRef ref $ \(nn, tm) ->
-    let (nn', l, a) = traceShow nn $ singleFit lr nn trainingExample
+  f ref (n, trainingExample) = modifySTRef ref $ \(nn, tm) ->
+    let (nn', l, a) = singleFit lr nn trainingExample
     in  (nn', tm // [(n, (l, a))])
   outDim = dims . snd . head $ td
 
